@@ -9,45 +9,40 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background-color: #f0fdf4; /* 清新的淡绿色背景 */
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
             font-family: 'Inter', 'Noto Sans SC', sans-serif;
             color: #0f172a;
             -webkit-font-smoothing: antialiased;
         }
-        .bg-mesh {
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
-                radial-gradient(at 0% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
-        }
         .glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px -5px rgba(16, 185, 129, 0.05);
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .animate-in {
-            animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        .animate-slide-in {
+            animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+    "react": "https://esm.sh/react@^19.2.3"
   }
 }
 </script>
 </head>
-<body class="bg-mesh min-h-screen">
+<body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>
