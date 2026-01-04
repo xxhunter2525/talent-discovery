@@ -1,11 +1,10 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { 
   Sparkles, ArrowRight, ArrowLeft, Compass, 
   Target, Zap, Search, Layers, RefreshCcw, Quote 
 } from 'lucide-react';
-import { GoogleGenAI, Type } from "@google/genai";
 
 // --- 1. 类型与配置 ---
 
@@ -29,56 +28,66 @@ const QUESTIONS = [
   { text: "你希望通过解决什么样的复杂问题来获得尊重？", desc: "天赋最终需要社会契约的认可。", placeholder: "如：重塑美学、构建自动化系统..." }
 ];
 
-// --- 2. 考古分析服务 ---
+// --- 2. 考古分析服务 (DeepSeek 适配) ---
 
 const SYSTEM_INSTRUCTION = `你是一位融合了 Dan Koe, Naval Ravikant 与 Steve Jobs 灵魂的天赋考古学家。
 任务：分析用户的7个回答，挖掘其“原子级天赋”与“特殊知识”。
 
-输出格式（JSON）：
-1. manifesto: 一段极简、有力、乔布斯风格的产品宣言。
-2. atomicAbilities: 3个底层原子能力。
-3. specificKnowledge: 特殊知识定义。
-4. futureCareers: 3个具备杠杆的未来职业建议。
-5. roadmap: 3步具体行动建议。
+你必须以 JSON 格式输出结果，结构如下：
+{
+  "manifesto": "一段极简、有力、乔布斯风格的产品宣言",
+  "atomicAbilities": [{"name": "能力名", "description": "本质描述"}],
+  "specificKnowledge": "特殊知识定义",
+  "futureCareers": [{"title": "职业名", "description": "描述", "leverage": "杠杆点"}],
+  "roadmap": ["步骤1", "步骤2", "步骤3"]
+}
 
-风格：清新、锐利、充满启发性。`;
+风格：清新、锐利、充满启发性。不要包含任何多余的文字说明。`;
 
 const startArchaeology = async (answers: string[]): Promise<TalentResult> => {
-  // Use process.env.API_KEY directly as per Gemini API guidelines
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `分析考古碎片，提取核心天赋映射：\n${answers.map((a, i) => `碎片${i+1}: ${a}`).join('\n')}`;
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key 未在环境变量中配置。");
+  }
+
+  const prompt = `以下是用户的考古碎片，请进行深度挖掘：\n${answers.map((a, i) => `碎片${i+1}: ${a}`).join('\n')}`;
 
   try {
-    // Upgraded to gemini-3-pro-preview for complex talent and personality analysis
-    const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
-      contents: prompt,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            manifesto: { type: Type.STRING },
-            atomicAbilities: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, description: { type: Type.STRING } }, required: ["name", "description"] } },
-            specificKnowledge: { type: Type.STRING },
-            futureCareers: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, leverage: { type: Type.STRING } }, required: ["title", "description", "leverage"] } },
-            roadmap: { type: Type.ARRAY, items: { type: Type.STRING } }
-          },
-          required: ["manifesto", "atomicAbilities", "specificKnowledge", "futureCareers", "roadmap"]
-        }
-      }
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          { role: "system", content: SYSTEM_INSTRUCTION },
+          { role: "user", content: prompt }
+        ],
+        response_format: {
+          type: "json_object"
+        },
+        stream: false
+      })
     });
-    // Extracting text output from response.text property
-    return JSON.parse(response.text.trim()) as TalentResult;
-  } catch (err) {
-    throw new Error("挖掘深度不足，请检查 API Key 配置或重试。");
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || `HTTP 错误: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    return JSON.parse(content) as TalentResult;
+  } catch (err: any) {
+    console.error("DeepSeek Error:", err);
+    throw new Error(`挖掘中断：${err.message || "未知连接错误"}`);
   }
 };
 
 // --- 3. UI 组件 ---
 
-// Fix for children prop missing error: make children optional to satisfy strict TS/JSX interpretation
 const Layout = ({ children }: { children?: React.ReactNode }) => (
   <div className="min-h-screen flex flex-col items-center justify-center p-6 sm:p-12 animate-slide-in">
     {children}
